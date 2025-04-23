@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脸识别考勤系统 - 后端</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .info-box {
+            background: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .server-info {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .endpoint {
+            font-family: monospace;
+            background: #f8f8f8;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>人脸识别考勤系统 - 后端服务</h1>
+        
+        <div class="info-box">
+            <h3>系统状态: 运行中</h3>
+            <p>该页面是人脸识别考勤系统的后端服务。前端应用应该通过API接口与该服务交互。</p>
+        </div>
+        
+        <h2>API 接口文档</h2>
+        
+        <table>
+            <tr>
+                <th>功能</th>
+                <th>端点</th>
+                <th>方法</th>
+                <th>描述</th>
+            </tr>
+            <tr>
+                <td>活体检测</td>
+                <td><span class="endpoint">/api/detect_liveness</span></td>
+                <td>POST</td>
+                <td>使用不同方法进行活体检测</td>
+            </tr>
+            <tr>
+                <td>人脸识别</td>
+                <td><span class="endpoint">/api/recognize_face</span></td>
+                <td>POST</td>
+                <td>识别人脸并进行身份验证</td>
+            </tr>
+            <tr>
+                <td>注册人脸</td>
+                <td><span class="endpoint">/api/register_face</span></td>
+                <td>POST</td>
+                <td>注册新的人脸到数据库</td>
+            </tr>
+            <tr>
+                <td>获取考勤记录</td>
+                <td><span class="endpoint">/api/get_attendance</span></td>
+                <td>GET</td>
+                <td>获取所有考勤记录</td>
+            </tr>
+            <tr>
+                <td>班级信息</td>
+                <td><span class="endpoint">/api/class_info</span></td>
+                <td>GET/POST</td>
+                <td>获取或添加班级信息</td>
+            </tr>
+        </table>
+        
+        <div class="server-info">
+            <h3>服务器信息</h3>
+            <p>
+                <strong>服务器时间:</strong> {{ current_time }}<br>
+                <strong>API 版本:</strong> v1.0<br>
+                <strong>支持的活体检测方法:</strong> 眨眼检测、深度学习、第三方API
+            </p>
+        </div>
+    </div>
+</body>
+</html> 
