@@ -63,49 +63,101 @@ export default new Vuex.Store({
         commit('SET_LOADING', false)
       }
     },
-    async detectLiveness({ commit, state }, imageData) {
+    async detectLiveness({ commit, state }, payload) {
       commit('SET_LOADING', true)
+      console.log("开始执行活体检测:", payload.method)
+      
       try {
-        const response = await axios.post('/api/detect_liveness', {
-          image: imageData,
-          method: state.livenessMethod
-        })
+        // 确保payload含有正确的数据
+        if (!payload || !payload.image) {
+          throw new Error('未提供图像数据')
+        }
+        
+        console.log(`活体检测使用方法: ${payload.method || state.livenessMethod}`)
+        
+        const requestData = {
+          image: payload.image,
+          method: payload.method || state.livenessMethod
+        }
+        
+        // 打印请求信息（不包含图像数据）
+        console.log(`发送活体检测请求到 /api/detect_liveness，使用方法: ${requestData.method}`)
+        
+        const response = await axios.post('/api/detect_liveness', requestData)
+        console.log("活体检测响应:", response.data)
+        
         commit('SET_LAST_DETECTION_RESULT', response.data)
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
-        const errorMsg = '活体检测失败：' + error.message
-        commit('SET_ERROR', errorMsg)
+        const errorMsg = '活体检测失败：' + (error.message || '未知错误')
         console.error(errorMsg, error)
-        return { success: false, message: errorMsg }
+        
+        // 如果有响应数据，输出更详细的错误信息
+        if (error.response) {
+          console.error('错误响应状态:', error.response.status)
+          console.error('错误响应数据:', error.response.data)
+        }
+        
+        commit('SET_ERROR', errorMsg)
+        return { 
+          is_live: false, 
+          message: errorMsg,
+          confidence: 0,
+          error: true
+        }
       } finally {
         commit('SET_LOADING', false)
       }
     },
     async recognizeFace({ commit, state }, imageData) {
       commit('SET_LOADING', true)
+      console.log("开始执行人脸识别")
+      
       try {
+        // 确保提供了图像数据
+        if (!imageData) {
+          throw new Error('未提供图像数据')
+        }
+        
+        console.log("发送人脸识别请求到 /api/recognize_face")
         const response = await axios.post('/api/recognize_face', {
           image: imageData,
           method: state.livenessMethod
         })
         
+        console.log("人脸识别响应:", response.data)
+        
         if (response.data.success) {
+          console.log(`识别成功: ${response.data.student_name} (${response.data.student_id})`)
           commit('ADD_ATTENDANCE_RECORD', {
             student_id: response.data.student_id,
             student_name: response.data.student_name,
             timestamp: response.data.timestamp,
             similarity: response.data.similarity
           })
+        } else {
+          console.log("识别失败:", response.data.message || "未找到匹配人脸")
         }
         
         commit('SET_ERROR', null)
         return response.data
       } catch (error) {
-        const errorMsg = '人脸识别失败：' + error.message
-        commit('SET_ERROR', errorMsg)
+        const errorMsg = '人脸识别失败：' + (error.message || '未知错误')
         console.error(errorMsg, error)
-        return { success: false, message: errorMsg }
+        
+        // 如果有响应数据，输出更详细的错误信息
+        if (error.response) {
+          console.error('错误响应状态:', error.response.status)
+          console.error('错误响应数据:', error.response.data)
+        }
+        
+        commit('SET_ERROR', errorMsg)
+        return { 
+          success: false, 
+          message: errorMsg,
+          error: true
+        }
       } finally {
         commit('SET_LOADING', false)
       }

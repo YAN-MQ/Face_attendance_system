@@ -10,7 +10,7 @@
           
           <v-card-text>
             <p class="subtitle-1">选择默认的活体检测方案</p>
-            <p class="body-2 mb-4">系统集成了三种不同的活体检测方案，您可以根据安全级别需求选择合适的方案。</p>
+            <p class="body-2 mb-4">系统集成了多种不同的活体检测方案，您可以根据安全级别需求选择合适的方案。</p>
             
             <v-radio-group v-model="livenessMethod" @change="updateLivenessMethod">
               <v-radio
@@ -33,6 +33,27 @@
                   <div>
                     <strong>深度学习纹理分析</strong>
                     <div class="text-caption">基于深度学习的纹理分析，能够区分真实人脸与照片/视频，精度更高。</div>
+                  </div>
+                </template>
+              </v-radio>
+              
+              <v-radio
+                label="改进多模态"
+                value="improved"
+              >
+                <template v-slot:label>
+                  <div>
+                    <strong>改进多模态活体检测</strong>
+                    <div class="text-caption">
+                      结合眨眼检测与深度学习的多模态方法，具有更高的安全性和准确率，推荐使用。
+                      <v-chip
+                        x-small
+                        color="success"
+                        class="ml-2"
+                      >
+                        推荐
+                      </v-chip>
+                    </div>
                   </div>
                 </template>
               </v-radio>

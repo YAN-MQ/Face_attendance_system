@@ -1,59 +1,167 @@
 <template>
-  <div class="container">
-    <h1>人脸注册</h1>
-    <div class="video-container">
-      <video ref="video" width="640" height="480" autoplay></video>
-      <canvas ref="canvas" width="640" height="480" style="display: none;"></canvas>
-      <div class="captured-container" v-if="capturedImage">
-        <img :src="capturedImage" alt="Captured Image" class="captured-image" />
-        <button @click="clearCapturedImage" class="clear-btn">重拍</button>
+  <div class="register-page">
+    <v-container>
+      <v-row>
+        <v-col cols="12">
+          <v-card class="solid-card mt-3 mb-5" elevation="3">
+            <v-card-title class="text-h4 font-weight-bold primary--text py-4">
+              <v-icon large color="primary" class="mr-3">mdi-account-plus</v-icon>
+              人脸注册
+            </v-card-title>
+          </v-card>
+        </v-col>
+      </v-row>
+      
+      <v-row>
+        <v-col cols="12" md="7">
+          <v-card class="solid-card hover-card mb-4" elevation="2">
+            <v-card-title class="subtitle-1 font-weight-medium">
+              <v-icon left color="primary">mdi-camera</v-icon>
+              拍摄人脸照片
+            </v-card-title>
+            <v-card-text>
+              <div class="video-container rounded-image">
+                <video ref="video" width="640" height="480" autoplay class="rounded-lg"></video>
+                <canvas ref="canvas" width="640" height="480" style="display: none;"></canvas>
+                <transition name="fade">
+                  <div class="captured-container" v-if="capturedImage">
+                    <img :src="capturedImage" alt="Captured Image" class="captured-image rounded-lg" />
+                    <v-btn fab small color="error" class="clear-btn btn-pulse" @click="clearCapturedImage">
+                      <v-icon>mdi-refresh</v-icon>
+                    </v-btn>
                   </div>
-      <button @click="captureImage" v-if="!capturedImage" class="capture-btn">拍照</button>
-                  </div>
+                </transition>
+                <v-btn
+                  color="primary"
+                  large
+                  rounded
+                  class="capture-btn btn-pulse mt-3"
+                  v-if="!capturedImage"
+                  @click="captureImage"
+                >
+                  <v-icon left>mdi-camera</v-icon>
+                  拍照
+                </v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        
+        <v-col cols="12" md="5">
+          <v-card class="solid-card hover-card" elevation="2">
+            <v-card-title class="subtitle-1 font-weight-medium">
+              <v-icon left color="primary">mdi-account-details</v-icon>
+              学生信息
+            </v-card-title>
+            <v-card-text>
+              <div class="form-container">
+                <v-form @submit.prevent="registerFace">
+                  <v-text-field
+                    v-model="studentId"
+                    label="学号"
+                    prepend-icon="mdi-identifier"
+                    outlined
+                    dense
+                    required
+                    class="mb-3"
+                  ></v-text-field>
                   
-    <div class="form-container">
-      <form @submit.prevent="registerFace">
-        <div class="form-group">
-          <label for="studentId">学号</label>
-          <input
-            type="text"
-            id="studentId"
-                        v-model="studentId"
-                        required
-            class="form-control"
-          />
-        </div>
-        <div class="form-group">
-          <label for="studentName">姓名</label>
-          <input
-            type="text"
-            id="studentName"
-                        v-model="studentName"
-                        required
-            class="form-control"
-          />
-        </div>
-        <div class="form-group">
-          <label for="classId">班级</label>
-          <select id="classId" v-model="classId" required class="form-control">
-            <option value="">请选择班级</option>
-            <option v-for="cls in classes" :key="cls.id" :value="cls.id">
-              {{ cls.name }}
-            </option>
-          </select>
-        </div>
-        <button 
-          type="submit" 
-          class="submit-btn" 
-          :disabled="isSubmitting || !capturedImage || !studentId || !studentName || !classId"
-                      >
-          {{ isSubmitting ? '保存中...' : '保存注册信息' }}
-        </button>
-        <div v-if="registrationStatus" class="status-message" :class="registrationStatus.type">
-          {{ registrationStatus.message }}
-        </div>
-      </form>
-    </div>
+                  <v-text-field
+                    v-model="studentName"
+                    label="姓名"
+                    prepend-icon="mdi-account"
+                    outlined
+                    dense
+                    required
+                    class="mb-3"
+                  ></v-text-field>
+                  
+                  <v-select
+                    v-model="classId"
+                    :items="classes"
+                    item-text="name"
+                    item-value="id"
+                    label="班级"
+                    prepend-icon="mdi-account-group"
+                    outlined
+                    dense
+                    required
+                    class="mb-5"
+                  ></v-select>
+                  
+                  <v-btn 
+                    type="submit" 
+                    color="primary" 
+                    block 
+                    large
+                    rounded
+                    class="btn-pulse" 
+                    elevation="2"
+                    :loading="isSubmitting"
+                    :disabled="isSubmitting || !capturedImage || !studentId || !studentName || !classId"
+                  >
+                    <v-icon left>mdi-content-save</v-icon>
+                    {{ isSubmitting ? '保存中...' : '保存注册信息' }}
+                  </v-btn>
+                  
+                  <transition name="fade">
+                    <v-alert
+                      v-if="registrationStatus"
+                      :type="registrationStatus.type === 'success' ? 'success' : 
+                            registrationStatus.type === 'error' ? 'error' : 'info'"
+                      dense
+                      class="mt-4"
+                      transition="scale-transition"
+                    >
+                      {{ registrationStatus.message }}
+                    </v-alert>
+                  </transition>
+                </v-form>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+      
+      <v-row class="mt-4" v-if="capturedImage">
+        <v-col cols="12">
+          <v-card class="solid-card hover-card" elevation="2">
+            <v-card-title class="subtitle-1 font-weight-medium">
+              <v-icon left color="primary">mdi-information-outline</v-icon>
+              注册须知
+            </v-card-title>
+            <v-card-text>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <div class="info-item">
+                    <v-icon color="primary" class="mr-2">mdi-check-circle</v-icon>
+                    <span>确保拍摄的照片光线充足，人脸清晰</span>
+                  </div>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <div class="info-item">
+                    <v-icon color="primary" class="mr-2">mdi-check-circle</v-icon>
+                    <span>请填写真实准确的个人信息</span>
+                  </div>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <div class="info-item">
+                    <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+                    <span>人脸数据会安全加密存储</span>
+                  </div>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <div class="info-item">
+                    <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+                    <span>注册成功后，可直接进行考勤打卡</span>
+                  </div>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 
@@ -63,7 +171,7 @@ export default {
   data() {
     return {
       videoStream: null,
-    capturedImage: null,
+      capturedImage: null,
       studentId: "",
       studentName: "",
       classId: "",
@@ -184,107 +292,89 @@ export default {
 </script>
 
 <style scoped>
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+.register-page {
+  min-height: calc(100vh - 145px);
+  position: relative;
 }
 
 .video-container {
   position: relative;
   margin-bottom: 20px;
   text-align: center;
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 5px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.video-container video,
+.captured-image {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 12px;
 }
 
 .captured-container {
   position: relative;
   display: inline-block;
+  width: 100%;
 }
 
-.captured-image {
-  max-width: 100%;
-  max-height: 480px;
-  display: block;
-  margin: 0 auto;
-}
-
-.capture-btn, .clear-btn, .submit-btn {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  margin: 10px 0;
-}
-
-.capture-btn:hover, .clear-btn:hover, .submit-btn:hover {
-  background-color: #45a049;
-}
-
-.capture-btn:disabled, .clear-btn:disabled, .submit-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.capture-btn {
+  margin: 20px auto;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .clear-btn {
-  background-color: #f44336;
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
 }
 
-.clear-btn:hover {
-  background-color: #d32f2f;
-}
-
-.form-container {
-  margin-top: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-input, select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-.status-message {
-  margin-top: 15px;
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
   padding: 10px;
-  border-radius: 4px;
-  text-align: center;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
 }
 
-.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+.info-item:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  transform: translateX(5px);
 }
 
-.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+/* 动画效果 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 
-.pending {
-  background-color: #e2f3f5;
-  color: #0c5460;
-  border: 1px solid #bee5eb;
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@media (max-width: 600px) {
+  .video-container video,
+  .captured-image {
+    max-height: 350px;
+  }
 }
 </style> 

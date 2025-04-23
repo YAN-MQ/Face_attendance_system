@@ -1,191 +1,357 @@
 <template>
-  <div class="records">
-    <v-row>
-      <v-col cols="12">
-        <v-card elevation="2">
-          <v-card-title class="headline">
-            <v-icon left>mdi-clipboard-text</v-icon>
-            考勤记录
-            <v-spacer></v-spacer>
-            <v-text-field
-              v-model="search"
-              append-icon="mdi-magnify"
-              label="搜索"
-              single-line
-              hide-details
-              class="ml-2"
-              style="max-width: 300px;"
-            ></v-text-field>
-          </v-card-title>
-          
-          <v-data-table
-            :headers="headers"
-            :items="attendanceRecords"
-            :search="search"
-            :loading="isLoading"
-            :items-per-page="10"
-            class="elevation-1"
-          >
-            <template v-slot:top>
-              <v-toolbar flat>
-                <v-toolbar-title>学生考勤记录</v-toolbar-title>
-                <v-divider class="mx-4" inset vertical></v-divider>
-                <v-select
-                  v-model="selectedClass"
-                  :items="classOptions"
-                  label="班级筛选"
-                  item-text="name"
-                  item-value="id"
-                  style="max-width: 200px;"
-                  clearable
-                  class="ml-2"
-                  @change="filterByClass"
-                ></v-select>
-                <v-spacer></v-spacer>
-                <v-btn color="primary" @click="refreshData">
-                  <v-icon left>mdi-refresh</v-icon>
-                  刷新
-                </v-btn>
-                <v-btn color="primary" class="ml-2" @click="exportToExcel">
-                  <v-icon left>mdi-file-excel</v-icon>
-                  导出Excel
-                </v-btn>
-              </v-toolbar>
-            </template>
-            
-            <!-- 学生姓名列 -->
-            <template v-slot:item.student_name="{ item }">
-              <v-chip small>{{ item.student_name }}</v-chip>
-            </template>
-            
-            <!-- 日期列 -->
-            <template v-slot:item.date="{ item }">
-              {{ formatDate(item.date) }}
-            </template>
-            
-            <!-- 时间列 -->
-            <template v-slot:item.time="{ item }">
-              {{ item.time }}
-            </template>
-            
-            <!-- 状态列 -->
-            <template v-slot:item.status="{ item }">
-              <v-chip
-                :color="getStatusColor(item.status)"
-                small
+  <div class="records-page">
+    <v-container fluid>
+      <v-row>
+        <v-col cols="12">
+          <v-card class="solid-card mb-5" elevation="3">
+            <v-card-title class="text-h4 font-weight-bold primary--text py-4">
+              <v-icon large color="primary" class="mr-3">mdi-clipboard-text</v-icon>
+              考勤记录
+            </v-card-title>
+          </v-card>
+        </v-col>
+      </v-row>
+      
+      <v-row>
+        <v-col cols="12" lg="3" md="4">
+          <v-card class="solid-card hover-card mb-4" elevation="2">
+            <v-card-title class="subtitle-1">
+              <v-icon color="primary" class="mr-2">mdi-filter-variant</v-icon>
+              筛选选项
+            </v-card-title>
+            <v-card-text>
+              <v-text-field
+                v-model="search"
+                label="搜索"
+                prepend-icon="mdi-magnify"
+                clearable
+                outlined
+                dense
+                hide-details
+                class="mb-4"
+              ></v-text-field>
+              
+              <v-select
+                v-model="selectedClass"
+                :items="classOptions"
+                label="班级筛选"
+                item-text="name"
+                item-value="id"
+                prepend-icon="mdi-account-group"
+                outlined
+                dense
+                clearable
+                hide-details
+                class="mb-4"
+                @change="filterByClass"
+              ></v-select>
+              
+              <v-divider class="my-4"></v-divider>
+              
+              <v-btn 
+                color="primary" 
+                block 
+                class="btn-pulse mb-3" 
+                rounded
+                elevation="2"
+                @click="refreshData"
               >
-                {{ getStatusText(item.status) }}
-              </v-chip>
-            </template>
+                <v-icon left>mdi-refresh</v-icon>
+                刷新数据
+              </v-btn>
+              
+              <v-btn 
+                color="success" 
+                block 
+                class="btn-pulse" 
+                rounded
+                elevation="2"
+                @click="exportToExcel"
+              >
+                <v-icon left>mdi-file-excel</v-icon>
+                导出Excel
+              </v-btn>
+            </v-card-text>
+          </v-card>
+          
+          <v-card class="solid-card hover-card stats-card" elevation="2">
+            <v-card-title class="subtitle-1">
+              <v-icon color="primary" class="mr-2">mdi-chart-box</v-icon>
+              考勤统计
+            </v-card-title>
+            <v-card-text>
+              <div class="stat-item">
+                <div class="stat-label">总记录数</div>
+                <div class="stat-value">{{ attendanceRecords.length }}</div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-label">正常出勤</div>
+                <div class="stat-value success--text">
+                  {{ attendanceRecords.filter(r => r.status === 'normal').length }}
+                </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-label">迟到</div>
+                <div class="stat-value warning--text">
+                  {{ attendanceRecords.filter(r => r.status === 'late').length }}
+                </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-label">缺勤</div>
+                <div class="stat-value error--text">
+                  {{ attendanceRecords.filter(r => r.status === 'absent').length }}
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        
+        <v-col cols="12" lg="9" md="8">
+          <v-card class="solid-card" elevation="2">
+            <v-card-title class="d-flex justify-space-between align-center">
+              <span class="subtitle-1 font-weight-medium">
+                <v-icon color="primary" class="mr-2">mdi-table</v-icon>
+                学生考勤记录表
+              </span>
+              <div class="d-flex align-center">
+                <v-chip small color="primary" class="mr-2">
+                  <v-icon left small>mdi-eye</v-icon>
+                  {{ displayRecords.length }} 条记录
+                </v-chip>
+                <v-btn icon small @click="refreshData" class="btn-pulse">
+                  <v-icon>mdi-refresh</v-icon>
+                </v-btn>
+              </div>
+            </v-card-title>
             
-            <!-- 识别置信度列 -->
-            <template v-slot:item.recognition_confidence="{ item }">
-              {{ (item.recognition_confidence * 100).toFixed(2) }}%
-            </template>
-            
-            <!-- 活体检测方法列 -->
-            <template v-slot:item.liveness_method="{ item }">
-              {{ getLivenessMethodText(item.liveness_method) }}
-            </template>
-            
-            <!-- 操作列 -->
-            <template v-slot:item.actions="{ item }">
-              <v-icon small class="mr-2" @click="viewDetails(item)">
-                mdi-eye
-              </v-icon>
-            </template>
-            
-            <!-- 没有数据时显示 -->
-            <template v-slot:no-data>
-              <v-alert type="info" outlined>
-                暂无考勤记录数据，请先进行考勤打卡。
-              </v-alert>
-            </template>
-          </v-data-table>
-        </v-card>
-      </v-col>
-    </v-row>
+            <v-data-table
+              :headers="headers"
+              :items="attendanceRecords"
+              :search="search"
+              :loading="isLoading"
+              :items-per-page="10"
+              class="elevation-0"
+              :footer-props="{
+                'items-per-page-options': [5, 10, 15, 20, -1],
+                'items-per-page-text': '每页显示'
+              }"
+              :loading-text="'正在加载数据...'"
+              :no-data-text="'暂无考勤记录数据'"
+            >
+              <!-- 学生姓名列 -->
+              <template v-slot:item.student_name="{ item }">
+                <v-chip small label class="font-weight-medium">
+                  {{ item.student_name }}
+                </v-chip>
+              </template>
+              
+              <!-- 日期列 -->
+              <template v-slot:item.date="{ item }">
+                <span class="font-weight-medium">{{ formatDate(item.date) }}</span>
+              </template>
+              
+              <!-- 时间列 -->
+              <template v-slot:item.time="{ item }">
+                <span>{{ item.time }}</span>
+              </template>
+              
+              <!-- 状态列 -->
+              <template v-slot:item.status="{ item }">
+                <v-chip
+                  small
+                  :color="getStatusColor(item.status)"
+                  label
+                  class="white--text"
+                >
+                  {{ getStatusText(item.status) }}
+                </v-chip>
+              </template>
+              
+              <!-- 识别置信度列 -->
+              <template v-slot:item.recognition_confidence="{ item }">
+                <v-progress-linear
+                  :value="item.recognition_confidence * 100"
+                  height="10"
+                  rounded
+                  :color="getConfidenceColor(item.recognition_confidence)"
+                  class="mt-1"
+                ></v-progress-linear>
+                <span class="caption">{{ (item.recognition_confidence * 100).toFixed(1) }}%</span>
+              </template>
+              
+              <!-- 活体检测方法列 -->
+              <template v-slot:item.liveness_method="{ item }">
+                <v-chip
+                  x-small
+                  outlined
+                  :color="getLivenessMethodColor(item.liveness_method)"
+                >
+                  {{ getLivenessMethodText(item.liveness_method) }}
+                </v-chip>
+              </template>
+              
+              <!-- 操作列 -->
+              <template v-slot:item.actions="{ item }">
+                <v-btn icon small color="info" class="mr-2 btn-pulse" @click="viewDetails(item)">
+                  <v-icon small>mdi-eye</v-icon>
+                </v-btn>
+              </template>
+              
+              <!-- 没有数据时显示 -->
+              <template v-slot:no-data>
+                <div class="d-flex flex-column align-center py-5">
+                  <v-icon size="64" color="grey lighten-1">mdi-calendar-blank</v-icon>
+                  <div class="text-subtitle-1 mt-3 text-center grey--text">
+                    暂无考勤记录数据，请先进行考勤打卡。
+                  </div>
+                  <v-btn color="primary" class="mt-4 btn-pulse" rounded to="/attendance">
+                    <v-icon left>mdi-account-check</v-icon>
+                    前往考勤
+                  </v-btn>
+                </div>
+              </template>
+            </v-data-table>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
     
     <!-- 详情对话框 -->
-    <v-dialog v-model="detailsDialog" max-width="500">
-      <v-card>
-        <v-card-title>考勤详情</v-card-title>
-        <v-card-text v-if="selectedRecord">
-          <v-list dense>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>学号</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedRecord.student_id }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+    <v-dialog v-model="detailsDialog" max-width="500" transition="dialog-transition">
+      <v-card class="solid-card">
+        <v-card-title class="primary--text d-flex justify-space-between align-center">
+          <span>
+            <v-icon color="primary" class="mr-2">mdi-account-details</v-icon>
+            考勤详情
+          </span>
+          <v-btn icon small @click="detailsDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text v-if="selectedRecord" class="pt-4">
+          <v-row>
+            <v-col cols="12" sm="6">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-badge-account</v-icon>
+                <div class="detail-label">学号</div>
+                <div class="detail-value">{{ selectedRecord.student_id }}</div>
+              </div>
+            </v-col>
             
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>姓名</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedRecord.student_name }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+            <v-col cols="12" sm="6">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-account</v-icon>
+                <div class="detail-label">姓名</div>
+                <div class="detail-value">{{ selectedRecord.student_name }}</div>
+              </div>
+            </v-col>
             
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>日期</v-list-item-title>
-                <v-list-item-subtitle>{{ formatDate(selectedRecord.date) }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+            <v-col cols="12" sm="6">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-calendar</v-icon>
+                <div class="detail-label">日期</div>
+                <div class="detail-value">{{ formatDate(selectedRecord.date) }}</div>
+              </div>
+            </v-col>
             
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>时间</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedRecord.time }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+            <v-col cols="12" sm="6">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-clock-outline</v-icon>
+                <div class="detail-label">时间</div>
+                <div class="detail-value">{{ selectedRecord.time }}</div>
+              </div>
+            </v-col>
             
-            <v-list-item v-if="selectedRecord.similarity">
-              <v-list-item-content>
-                <v-list-item-title>相似度</v-list-item-title>
-                <v-list-item-subtitle>{{ (selectedRecord.similarity * 100).toFixed(2) }}%</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+            <v-col cols="12" sm="6" v-if="selectedRecord.similarity">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-account-check</v-icon>
+                <div class="detail-label">相似度</div>
+                <div class="detail-value">
+                  <v-progress-linear
+                    :value="selectedRecord.similarity * 100"
+                    height="6"
+                    rounded
+                    :color="getConfidenceColor(selectedRecord.similarity)"
+                  ></v-progress-linear>
+                  <span class="caption">{{ (selectedRecord.similarity * 100).toFixed(2) }}%</span>
+                </div>
+              </div>
+            </v-col>
             
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>状态</v-list-item-title>
-                <v-list-item-subtitle>
+            <v-col cols="12" sm="6">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-alert-circle-outline</v-icon>
+                <div class="detail-label">状态</div>
+                <div class="detail-value">
                   <v-chip
                     x-small
                     :color="getStatusColor(selectedRecord.status)"
+                    label
+                    class="white--text"
                   >
                     {{ getStatusText(selectedRecord.status) }}
                   </v-chip>
-                </v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+                </div>
+              </div>
+            </v-col>
             
-            <v-list-item v-if="selectedRecord.recognition_confidence">
-              <v-list-item-content>
-                <v-list-item-title>识别置信度</v-list-item-title>
-                <v-list-item-subtitle>{{ (selectedRecord.recognition_confidence * 100).toFixed(2) }}%</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+            <v-col cols="12" sm="6" v-if="selectedRecord.recognition_confidence">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-face-recognition</v-icon>
+                <div class="detail-label">识别置信度</div>
+                <div class="detail-value">
+                  <v-progress-linear
+                    :value="selectedRecord.recognition_confidence * 100"
+                    height="6"
+                    rounded
+                    :color="getConfidenceColor(selectedRecord.recognition_confidence)"
+                  ></v-progress-linear>
+                  <span class="caption">{{ (selectedRecord.recognition_confidence * 100).toFixed(2) }}%</span>
+                </div>
+              </div>
+            </v-col>
             
-            <v-list-item v-if="selectedRecord.liveness_method">
-              <v-list-item-content>
-                <v-list-item-title>活体检测方法</v-list-item-title>
-                <v-list-item-subtitle>{{ getLivenessMethodText(selectedRecord.liveness_method) }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+            <v-col cols="12" sm="6" v-if="selectedRecord.liveness_method">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-shield-check</v-icon>
+                <div class="detail-label">活体检测方法</div>
+                <div class="detail-value">
+                  <v-chip
+                    x-small
+                    outlined
+                    :color="getLivenessMethodColor(selectedRecord.liveness_method)"
+                  >
+                    {{ getLivenessMethodText(selectedRecord.liveness_method) }}
+                  </v-chip>
+                </div>
+              </div>
+            </v-col>
             
-            <v-list-item v-if="selectedRecord.liveness_confidence">
-              <v-list-item-content>
-                <v-list-item-title>活体检测置信度</v-list-item-title>
-                <v-list-item-subtitle>{{ (selectedRecord.liveness_confidence * 100).toFixed(2) }}%</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
+            <v-col cols="12" sm="6" v-if="selectedRecord.liveness_confidence">
+              <div class="detail-item">
+                <v-icon small color="primary" class="mr-2">mdi-shield-account</v-icon>
+                <div class="detail-label">活体检测置信度</div>
+                <div class="detail-value">
+                  <v-progress-linear
+                    :value="selectedRecord.liveness_confidence * 100"
+                    height="6"
+                    rounded
+                    :color="getConfidenceColor(selectedRecord.liveness_confidence)"
+                  ></v-progress-linear>
+                  <span class="caption">{{ (selectedRecord.liveness_confidence * 100).toFixed(2) }}%</span>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
         </v-card-text>
-        <v-card-actions>
+        <v-divider></v-divider>
+        <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="detailsDialog = false">关闭</v-btn>
+          <v-btn color="primary" text rounded class="btn-pulse" @click="detailsDialog = false">关闭</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -210,7 +376,7 @@ export default {
       { text: '状态', value: 'status', sortable: true },
       { text: '识别置信度', value: 'recognition_confidence', sortable: true },
       { text: '活体检测方法', value: 'liveness_method', sortable: true },
-      { text: '操作', value: 'actions', sortable: false }
+      { text: '操作', value: 'actions', sortable: false, align: 'center', width: '80px' }
     ],
     classOptions: [
       { id: 'class1', name: '计算机科学与技术1班' },
@@ -288,6 +454,26 @@ export default {
       }
     },
     
+    getLivenessMethodColor(method) {
+      switch(method) {
+        case 'blink':
+          return 'purple';
+        case 'deep_learning':
+          return 'blue';
+        case 'api':
+          return 'cyan';
+        default:
+          return 'grey';
+      }
+    },
+    
+    getConfidenceColor(score) {
+      if (score > 0.8) return 'success';
+      if (score > 0.6) return 'primary';
+      if (score > 0.4) return 'warning';
+      return 'error';
+    },
+    
     viewDetails(item) {
       this.selectedRecord = item;
       this.detailsDialog = true;
@@ -338,7 +524,92 @@ export default {
 </script>
 
 <style scoped>
-.records {
-  margin-bottom: 20px;
+.records-page {
+  min-height: calc(100vh - 145px);
+  position: relative;
+}
+
+/* 统计卡片样式 */
+.stats-card {
+  background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.5));
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* 详情项样式 */
+.detail-item {
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+.detail-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-right: 8px;
+}
+
+.detail-value {
+  font-weight: 500;
+  flex-grow: 1;
+  text-align: right;
+}
+
+/* 动画效果 */
+.dialog-transition-enter-active,
+.dialog-transition-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.dialog-transition-enter-from,
+.dialog-transition-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* 添加响应式样式 */
+@media (max-width: 600px) {
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .detail-value {
+    text-align: left;
+    margin-top: 4px;
+  }
 }
 </style> 

@@ -1,0 +1,285 @@
+/* 全局动画效果 */
+.page-enter-active, .page-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.page-enter, .page-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* 卡片悬停效果 */
+.hover-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 16px !important;
+  overflow: hidden;
+  background-color: white !important;
+}
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07) !important;
+}
+
+/* 按钮脉冲效果 */
+.btn-pulse {
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  border-radius: 12px !important;
+}
+.btn-pulse:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.btn-pulse:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+.btn-pulse:hover:before {
+  width: 300%;
+  height: 300%;
+}
+
+/* 替换模糊效果为纯色半透明 */
+.solid-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 24px !important;
+}
+
+.solid-card-dark {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 24px !important;
+}
+
+/* 加载动画效果 */
+.loading-wave {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 40px;
+}
+.loading-wave .dot {
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: wave 1.3s linear infinite;
+}
+.loading-wave .dot:nth-child(2) {
+  animation-delay: -1.1s;
+}
+.loading-wave .dot:nth-child(3) {
+  animation-delay: -0.9s;
+}
+
+@keyframes wave {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-15px);
+  }
+}
+
+/* 3D翻转卡片效果 */
+.flip-card {
+  perspective: 1000px;
+  width: 100%;
+  height: 100%;
+}
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* R角图像容器 */
+.rounded-image {
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 圆形头像效果 */
+.avatar-circle {
+  border-radius: 50% !important;
+  border: 3px solid white !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease;
+}
+.avatar-circle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 波浪边界 */
+.wave-border {
+  position: relative;
+  border-radius: 24px 24px 50% 50% / 24px 24px 38px 38px !important;
+}
+
+/* 渐变背景 */
+.gradient-bg {
+  background: linear-gradient(135deg, #6fa8dc 0%, #8e7cc3 100%) !important;
+  border-radius: 24px !important;
+}
+
+/* 卡片组效果 */
+.card-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 16px;
+}
+
+/* 标签样式 */
+.custom-tag {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: rgba(33, 150, 243, 0.1);
+  color: #1976d2;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+.custom-tag:hover {
+  background: rgba(33, 150, 243, 0.2);
+  transform: translateY(-2px);
+}
+
+/* 提升卡片间隔 */
+.v-application .elevation-card {
+  margin-bottom: 24px !important;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 背景图案 */
+.bg-pattern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.03;
+  background-image: 
+    radial-gradient(circle at 25px 25px, #000 2%, transparent 0%), 
+    radial-gradient(circle at 75px 75px, #000 2%, transparent 0%);
+  background-size: 100px 100px;
+}
+
+/* 闪光效果 */
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(30deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(30deg);
+  }
+}
+
+/* 打字机效果 */
+.typewriter {
+  overflow: hidden;
+  border-right: 2px solid currentColor;
+  white-space: nowrap;
+  animation: typing 3.5s steps(30, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: currentColor }
+}
+
+/* 导航条样式 - 无模糊 */
+.app-bar-solid {
+  background: rgb(25, 118, 210) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 页脚样式 - 无模糊 */
+.footer-solid {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.footer-solid-dark {
+  background: rgba(30, 30, 30, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+} 
