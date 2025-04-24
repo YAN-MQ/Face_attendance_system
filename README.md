@@ -15,7 +15,7 @@
 
 - **前端**：Vue.js, Vuetify
 - **后端**：Node.js, Express
-- **数据库**：MongoDB
+- **数据库**：MySQL
 - **其他**：使用第三方API进行活体检测
 
 ## 安装步骤
