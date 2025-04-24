@@ -22,11 +22,11 @@
 
 1. 克隆项目到本地：
    ```bash
-   git clone <repository-url>
+   git clone [<repository-url>](https://github.com/YAN-MQ/Face_attendance_system)
    ```
 2. 进入项目目录：
    ```bash
-   cd <project-directory>
+   cd Face_attendance_system
    ```
 3. 安装依赖：
    ```bash
