@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 import os
 import cv2
@@ -9,6 +9,13 @@ from datetime import datetime
 # 修改这一行导入
 from flask.json import provider
 import traceback
+
+# 导入Excel相关模块
+import pandas as pd
+import tempfile
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from werkzeug.utils import secure_filename
 
 # 导入自定义活体检测模块
 from models.blink_detection import BlinkDetector
@@ -23,7 +30,7 @@ from models.database_models import Student, FaceImage, AttendanceRecord, Class
 from models.face_recognition_utils import FaceRecognitionUtils
 from models.liveness_detection_improved import ImprovedLivenessDetection
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../static', static_url_path='/static')
 CORS(app)  # 启用跨域支持
 
 # 创建自定义 JSON 编码器来处理 NumPy 类型
@@ -515,6 +522,298 @@ def livenessdetection_methods():
     ]
     
     return jsonify(methods)
+
+@app.route('/api/student_template', methods=['GET'])
+def student_template():
+    """提供学生信息模板下载"""
+    template_path = os.path.join(app.static_folder, 'templates')
+    return send_from_directory(template_path, '学生信息模板.xlsx', as_attachment=True)
+
+@app.route('/api/generate_excel_template', methods=['GET', 'OPTIONS'])
+def generate_excel_template():
+    """生成Excel导入模板"""
+    # 处理预检请求
+    if request.method == 'OPTIONS':
+        response = app.make_response("")
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Max-Age', '86400')
+        return response
+        
+    try:
+        # 获取班级信息用于下拉列表
+        db = get_db()
+        classes = db_utils.get_all_classes(db)
+        class_list = [{"id": cls.id, "name": cls.name} for cls in classes]
+        
+        # 创建一个新的Excel工作簿
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "学生人脸注册信息"
+        
+        # 定义样式
+        header_font = Font(bold=True, size=12, color="FFFFFF")
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+        centered_alignment = Alignment(horizontal='center', vertical='center')
+        border = Border(
+            left=Side(style='thin'), 
+            right=Side(style='thin'), 
+            top=Side(style='thin'), 
+            bottom=Side(style='thin')
+        )
+        
+        # 设置列宽
+        ws.column_dimensions['A'].width = 15
+        ws.column_dimensions['B'].width = 15
+        ws.column_dimensions['C'].width = 20
+        ws.column_dimensions['D'].width = 40
+        
+        # 添加表头
+        headers = ["学号(*)", "姓名(*)", "班级ID(*)", "图片路径(*)"]
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = centered_alignment
+            cell.border = border
+        
+        # 添加一些示例数据
+        sample_data = [
+            ["10001", "张三", class_list[0]["id"] if class_list else "class1", "C:/Photos/10001.jpg"],
+            ["10002", "李四", class_list[0]["id"] if class_list else "class1", "C:/Photos/10002.jpg"]
+        ]
+        
+        for row_num, row_data in enumerate(sample_data, 2):
+            for col_num, cell_value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+                cell.border = border
+        
+        # 添加数据有效性验证（班级ID下拉列表）
+        if class_list:
+            class_ids = [cls["id"] for cls in class_list]
+            data_validation = openpyxl.worksheet.datavalidation.DataValidation(
+                type="list", 
+                formula1=f'"{",".join(class_ids)}"',
+                allow_blank=True
+            )
+            data_validation.add(f'C2:C1000')  # 应用到C列
+            ws.add_data_validation(data_validation)
+        
+        # 添加说明工作表
+        ws_help = wb.create_sheet(title="填表说明")
+        ws_help.column_dimensions['A'].width = 80
+        
+        instructions = [
+            "填表说明：",
+            "1. 带(*)的列为必填项",
+            "2. 学号：必须是唯一的学生ID",
+            "3. 姓名：学生姓名",
+            "4. 班级ID：从下拉列表中选择班级ID",
+            "5. 图片路径：学生照片的完整路径，支持JPG、PNG格式",
+            "",
+            "注意事项：",
+            "1. 请确保照片清晰、正面且光线充足",
+            "2. 导入时会自动处理照片并注册到系统中",
+            "3. 若学生已存在，将更新对应信息"
+        ]
+        
+        for row_num, instruction in enumerate(instructions, 1):
+            cell = ws_help.cell(row=row_num, column=1)
+            cell.value = instruction
+        
+        # 添加班级ID映射表
+        if class_list:
+            ws_help.cell(row=len(instructions) + 2, column=1).value = "班级ID参考表："
+            ws_help.cell(row=len(instructions) + 3, column=1).value = "班级ID\t班级名称"
+            
+            for i, cls in enumerate(class_list):
+                ws_help.cell(row=len(instructions) + 4 + i, column=1).value = f"{cls['id']}\t{cls['name']}"
+        
+        # 保存到临时文件
+        temp_file = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+        wb.save(temp_file.name)
+        temp_file.close()
+        
+        # 读取文件并设置响应
+        with open(temp_file.name, 'rb') as f:
+            data = f.read()
+        
+        # 删除临时文件
+        os.unlink(temp_file.name)
+        
+        # 设置响应头，让浏览器下载文件
+        response = app.make_response(data)
+        response.headers["Content-Disposition"] = "attachment; filename=学生人脸注册模板.xlsx"
+        response.headers["Content-type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        # 添加CORS头，确保跨域请求能正确处理文件下载
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        
+        return response
+        
+    except Exception as e:
+        print(f"生成Excel模板出错: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": f"生成Excel模板失败: {str(e)}"}), 500
+    finally:
+        if 'db' in locals():
+            db.close()
+
+@app.route('/api/import_excel', methods=['POST'])
+def import_excel():
+    """从Excel文件导入学生信息并注册"""
+    if 'file' not in request.files:
+        return jsonify({"error": "没有上传文件", "success": False}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "文件名为空", "success": False}), 400
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        return jsonify({"error": "只支持Excel文件(.xlsx, .xls)", "success": False}), 400
+    
+    # 保存上传的文件
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, secure_filename(file.filename))
+    file.save(file_path)
+    
+    db = None
+    result = {
+        "success": True,
+        "total": 0,
+        "success_count": 0,
+        "failed_count": 0,
+        "details": []
+    }
+    
+    try:
+        # 读取Excel文件
+        df = pd.read_excel(file_path, sheet_name=0)
+        required_cols = ["学号(*)", "姓名(*)", "班级ID(*)", "图片路径(*)"]
+        
+        # 检查是否包含所有必要列
+        for col in required_cols:
+            if col not in df.columns:
+                return jsonify({"error": f"Excel文件缺少必要列: {col}", "success": False}), 400
+        
+        # 重命名列名为英文，方便处理
+        df.columns = [
+            'student_id' if col == "学号(*)" else
+            'student_name' if col == "姓名(*)" else
+            'class_id' if col == "班级ID(*)" else
+            'image_path' if col == "图片路径(*)" else
+            col for col in df.columns
+        ]
+        
+        db = get_db()
+        result["total"] = len(df)
+        
+        # 遍历每一行，处理学生信息
+        for index, row in df.iterrows():
+            # 提取每行的数据
+            student_id = str(row['student_id'])
+            student_name = str(row['student_name'])
+            class_id = str(row['class_id'])
+            image_path = str(row['image_path'])
+            
+            record = {
+                "student_id": student_id,
+                "student_name": student_name,
+                "class_id": class_id,
+                "image_path": image_path,
+                "success": False,
+                "message": ""
+            }
+            
+            # 验证数据
+            if pd.isna(row['student_id']) or pd.isna(row['student_name']) or pd.isna(row['class_id']) or pd.isna(row['image_path']):
+                record["message"] = "数据不完整，存在空值"
+                result["details"].append(record)
+                result["failed_count"] += 1
+                continue
+            
+            # 检查图片文件是否存在
+            if not os.path.exists(image_path):
+                record["message"] = f"图片路径不存在: {image_path}"
+                result["details"].append(record)
+                result["failed_count"] += 1
+                continue
+            
+            try:
+                # 读取图片
+                img = cv2.imread(image_path)
+                if img is None:
+                    record["message"] = f"无法读取图片: {image_path}"
+                    result["details"].append(record)
+                    result["failed_count"] += 1
+                    continue
+                
+                # 检查班级是否存在，不存在则创建
+                class_obj = db.query(Class).filter(Class.id == class_id).first()
+                if not class_obj:
+                    class_obj = Class(
+                        id=class_id,
+                        name=f"班级 {class_id}",
+                        description="Excel导入自动创建的班级"
+                    )
+                    db.add(class_obj)
+                    db.commit()
+                
+                # 检查学生是否存在
+                db_student = db_utils.get_student_by_id(db, student_id)
+                if not db_student:
+                    db_student = db_utils.create_student(db, student_id, student_name, class_id)
+                
+                # 保存人脸图像
+                student_dir = os.path.join(FACE_DB_DIR, student_id)
+                ensure_directory(student_dir)
+                
+                # 生成目标图像路径
+                image_filename = f"{student_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+                target_image_path = os.path.join(student_dir, image_filename)
+                
+                # 保存图像到人脸数据库
+                cv2.imwrite(target_image_path, img)
+                
+                # 将图像添加到人脸编码缓存
+                face_encoding_result = face_recognition_utils.add_face_encoding(student_id, img)
+                
+                # 保存人脸图像信息到数据库
+                db_face = db_utils.add_face_image(db, student_id, target_image_path)
+                
+                record["success"] = True
+                record["message"] = "注册成功"
+                result["success_count"] += 1
+            except Exception as e:
+                record["message"] = f"处理出错: {str(e)}"
+                result["failed_count"] += 1
+                traceback.print_exc()
+            
+            result["details"].append(record)
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"Excel导入出错: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            "error": f"Excel导入失败: {str(e)}",
+            "success": False
+        }), 500
+    finally:
+        # 清理临时文件
+        if os.path.exists(file_path):
+            os.unlink(file_path)
+        if os.path.exists(temp_dir):
+            os.rmdir(temp_dir)
+        # 关闭数据库连接
+        if db:
+            db.close()
 
 if __name__ == '__main__':
     # 确保数据库表存在

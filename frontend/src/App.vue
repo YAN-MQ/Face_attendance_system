@@ -121,6 +121,28 @@
         </v-card>
       </v-dialog>
       
+      <!-- 成功提示 -->
+      <v-snackbar
+        v-model="showSuccessSnackbar"
+        :timeout="3000"
+        color="success"
+        top
+        rounded="pill"
+        class="success-snackbar"
+      >
+        <v-icon left>mdi-check-circle</v-icon>
+        {{ $store.state.success }}
+        <template v-slot:action="{ attrs }">
+          <v-btn
+            icon
+            v-bind="attrs"
+            @click="clearSuccess"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </template>
+      </v-snackbar>
+      
       <v-container fluid class="px-4 py-2">
         <transition name="page" mode="out-in">
           <router-view></router-view>
@@ -162,6 +184,7 @@ export default {
     drawer: false,
     isDarkMode: false,
     showErrorDialog: false,
+    showSuccessSnackbar: false,
     isOnline: true,
     menuItems: [
       { title: '首页', path: '/', icon: 'mdi-home' },
@@ -176,7 +199,7 @@ export default {
     ...mapGetters(['isLoading'])
   },
   methods: {
-    ...mapMutations(['SET_ERROR']),
+    ...mapMutations(['SET_ERROR', 'SET_SUCCESS']),
     toggleDarkMode() {
       this.isDarkMode = !this.isDarkMode;
       this.$vuetify.theme.dark = this.isDarkMode;
@@ -186,6 +209,10 @@ export default {
     clearError() {
       this.showErrorDialog = false;
       this.SET_ERROR(null);
+    },
+    clearSuccess() {
+      this.showSuccessSnackbar = false;
+      this.SET_SUCCESS(null);
     },
     checkOnlineStatus() {
       this.isOnline = navigator.onLine;
@@ -213,6 +240,11 @@ export default {
     '$store.state.error'(newVal) {
       if (newVal) {
         this.showErrorDialog = true;
+      }
+    },
+    '$store.state.success'(newVal) {
+      if (newVal) {
+        this.showSuccessSnackbar = true;
       }
     }
   }
@@ -244,6 +276,10 @@ export default {
   background-image: 
     radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.07) 2%, transparent 0%),
     radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.07) 2%, transparent 0%);
+}
+
+.success-snackbar {
+  font-weight: 500;
 }
 
 .menu-item {

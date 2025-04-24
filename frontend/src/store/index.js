@@ -11,6 +11,7 @@ export default new Vuex.Store({
     livenessMethod: 'blink', // 默认活体检测方法
     loading: false,
     error: null,
+    success: null,
     lastDetectionResult: null
   },
   mutations: {
@@ -28,6 +29,15 @@ export default new Vuex.Store({
     },
     SET_ERROR(state, error) {
       state.error = error
+      if (error) {
+        state.success = null // 清除成功消息
+      }
+    },
+    SET_SUCCESS(state, message) {
+      state.success = message
+      if (message) {
+        state.error = null // 清除错误消息
+      }
     },
     SET_LAST_DETECTION_RESULT(state, result) {
       state.lastDetectionResult = result
@@ -221,6 +231,7 @@ export default new Vuex.Store({
   getters: {
     isLoading: state => state.loading,
     error: state => state.error,
+    success: state => state.success,
     attendanceRecords: state => state.attendanceRecords,
     classInfo: state => state.classInfo,
     livenessMethod: state => state.livenessMethod,

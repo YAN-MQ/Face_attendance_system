@@ -14,7 +14,7 @@
       
       <v-row>
         <v-col cols="12" md="7">
-          <v-card class="solid-card hover-card mb-4" elevation="2">
+          <v-card class="solid-card hover-card mb-4 camera-card" elevation="2">
             <v-card-title class="subtitle-1 font-weight-medium">
               <v-icon left color="primary">mdi-camera</v-icon>
               拍摄人脸照片
@@ -47,79 +47,180 @@
           </v-card>
         </v-col>
         
-        <v-col cols="12" md="5">
-          <v-card class="solid-card hover-card" elevation="2">
-            <v-card-title class="subtitle-1 font-weight-medium">
-              <v-icon left color="primary">mdi-account-details</v-icon>
-              学生信息
-            </v-card-title>
-            <v-card-text>
-              <div class="form-container">
-                <v-form @submit.prevent="registerFace">
-                  <v-text-field
-                    v-model="studentId"
-                    label="学号"
-                    prepend-icon="mdi-identifier"
-                    outlined
-                    dense
-                    required
-                    class="mb-3"
-                  ></v-text-field>
-                  
-                  <v-text-field
-                    v-model="studentName"
-                    label="姓名"
-                    prepend-icon="mdi-account"
-                    outlined
-                    dense
-                    required
-                    class="mb-3"
-                  ></v-text-field>
-                  
-                  <v-select
-                    v-model="classId"
-                    :items="classes"
-                    item-text="name"
-                    item-value="id"
-                    label="班级"
-                    prepend-icon="mdi-account-group"
-                    outlined
-                    dense
-                    required
-                    class="mb-5"
-                  ></v-select>
-                  
+        <v-col cols="12" md="5" class="right-cards-container d-flex flex-column">
+          <div class="card-wrapper flex-grow-1">
+            <v-card class="solid-card hover-card student-info-card" elevation="2">
+              <v-card-title class="subtitle-1 font-weight-medium">
+                <v-icon left color="primary">mdi-account-details</v-icon>
+                学生信息
+              </v-card-title>
+              <v-card-text>
+                <div class="form-container">
+                  <v-form @submit.prevent="registerFace">
+                    <v-text-field
+                      v-model="studentId"
+                      label="学号"
+                      prepend-icon="mdi-identifier"
+                      outlined
+                      dense
+                      required
+                      class="mb-3"
+                    ></v-text-field>
+                    
+                    <v-text-field
+                      v-model="studentName"
+                      label="姓名"
+                      prepend-icon="mdi-account"
+                      outlined
+                      dense
+                      required
+                      class="mb-3"
+                    ></v-text-field>
+                    
+                    <v-select
+                      v-model="classId"
+                      :items="classes"
+                      item-text="name"
+                      item-value="id"
+                      label="班级"
+                      prepend-icon="mdi-account-group"
+                      outlined
+                      dense
+                      required
+                      class="mb-5"
+                    ></v-select>
+                    
+                    <v-btn 
+                      type="submit" 
+                      color="primary" 
+                      block 
+                      large
+                      rounded
+                      class="btn-pulse" 
+                      elevation="2"
+                      :loading="isSubmitting"
+                      :disabled="isSubmitting || !capturedImage || !studentId || !studentName || !classId"
+                    >
+                      <v-icon left>mdi-content-save</v-icon>
+                      {{ isSubmitting ? '保存中...' : '保存注册信息' }}
+                    </v-btn>
+                    
+                    <transition name="fade">
+                      <v-alert
+                        v-if="registrationStatus"
+                        :type="registrationStatus.type === 'success' ? 'success' : 
+                              registrationStatus.type === 'error' ? 'error' : 'info'"
+                        dense
+                        class="mt-4"
+                        transition="scale-transition"
+                      >
+                        {{ registrationStatus.message }}
+                      </v-alert>
+                    </transition>
+                  </v-form>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
+          
+          <div class="card-wrapper flex-grow-1">
+            <v-card class="solid-card hover-card import-card" elevation="2">
+              <v-card-title class="subtitle-1 font-weight-medium">
+                <v-icon left color="primary">mdi-file-excel</v-icon>
+                批量导入
+              </v-card-title>
+              <v-card-text class="pb-0">
+                <div class="excel-import-container">
                   <v-btn 
-                    type="submit" 
-                    color="primary" 
+                    color="success" 
                     block 
-                    large
-                    rounded
-                    class="btn-pulse" 
-                    elevation="2"
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting || !capturedImage || !studentId || !studentName || !classId"
+                    outlined
+                    class="mb-3" 
+                    @click="downloadTemplate"
                   >
-                    <v-icon left>mdi-content-save</v-icon>
-                    {{ isSubmitting ? '保存中...' : '保存注册信息' }}
+                    <v-icon left>mdi-file-download</v-icon>
+                    下载Excel导入模板
                   </v-btn>
                   
-                  <transition name="fade">
+                  <v-file-input
+                    v-model="excelFile"
+                    label="选择Excel文件"
+                    prepend-icon="mdi-file-excel"
+                    outlined
+                    dense
+                    accept=".xlsx,.xls"
+                    :rules="[v => !v || v.size < 5000000 || '文件大小不能超过5MB']"
+                    show-size
+                    counter
+                    class="mb-3"
+                  ></v-file-input>
+                  
+                  <v-btn 
+                    color="primary" 
+                    :loading="isImporting"
+                    :disabled="!excelFile"
+                    block 
+                    @click="importExcel"
+                  >
+                    <v-icon left>mdi-database-import</v-icon>
+                    {{ isImporting ? '导入中...' : '开始导入' }}
+                  </v-btn>
+                </div>
+                
+                <!-- 导入结果显示 -->
+                <v-expand-transition>
+                  <div v-if="importResult">
+                    <v-divider class="my-4"></v-divider>
                     <v-alert
-                      v-if="registrationStatus"
-                      :type="registrationStatus.type === 'success' ? 'success' : 
-                            registrationStatus.type === 'error' ? 'error' : 'info'"
-                      dense
-                      class="mt-4"
-                      transition="scale-transition"
+                      :type="importResult.success ? 'success' : 'error'"
+                      class="mb-3"
                     >
-                      {{ registrationStatus.message }}
+                      {{ importResult.success ? '导入完成' : '导入失败' }}
+                      <template v-if="importResult.success">
+                        （共{{ importResult.total }}条，成功{{ importResult.success_count }}条，失败{{ importResult.failed_count }}条）
+                      </template>
+                      <template v-else>
+                        {{ importResult.error }}
+                      </template>
                     </v-alert>
-                  </transition>
-                </v-form>
-              </div>
-            </v-card-text>
-          </v-card>
+                    
+                    <div v-if="importResult.details && importResult.details.length > 0">
+                      <v-simple-table dense class="elevation-1">
+                        <template v-slot:default>
+                          <thead>
+                            <tr>
+                              <th>学号</th>
+                              <th>姓名</th>
+                              <th>班级</th>
+                              <th>状态</th>
+                              <th>消息</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="(record, index) in importResult.details" :key="index">
+                              <td>{{ record.student_id }}</td>
+                              <td>{{ record.student_name }}</td>
+                              <td>{{ record.class_id }}</td>
+                              <td>
+                                <v-chip
+                                  small
+                                  :color="record.success ? 'success' : 'error'"
+                                  text-color="white"
+                                >
+                                  {{ record.success ? '成功' : '失败' }}
+                                </v-chip>
+                              </td>
+                              <td>{{ record.message }}</td>
+                            </tr>
+                          </tbody>
+                        </template>
+                      </v-simple-table>
+                    </div>
+                  </div>
+                </v-expand-transition>
+              </v-card-text>
+            </v-card>
+          </div>
         </v-col>
       </v-row>
       
@@ -181,7 +282,10 @@ export default {
         { id: "class3", name: "人工智能1班" }
       ],
       isSubmitting: false,
-      registrationStatus: null
+      registrationStatus: null,
+      excelFile: null,
+      isImporting: false,
+      importResult: null
     };
   },
   mounted() {
@@ -286,7 +390,63 @@ export default {
   },
     showStatus(message, type) {
       this.registrationStatus = { message, type };
-  }
+  },
+    downloadTemplate() {
+      // 显示下载中状态
+      this.showStatus("正在准备Excel模板...", "info");
+      
+      // 使用专门的API端点获取模板
+      window.location.href = "/api/student_template";
+      
+      // 显示成功状态
+      setTimeout(() => {
+        this.showStatus("模板已下载，请查看下载文件夹", "success");
+        
+        // 3秒后清除状态
+        setTimeout(() => {
+          this.registrationStatus = null;
+        }, 3000);
+      }, 1000);
+    },
+    async importExcel() {
+      if (!this.excelFile) {
+        this.$store.commit('SET_ERROR', '请先选择Excel文件');
+        return;
+      }
+      
+      this.isImporting = true;
+      this.importResult = null;
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', this.excelFile);
+        
+        const response = await fetch('/api/import_excel', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || '导入失败');
+        }
+        
+        this.importResult = result;
+        
+        if (result.success && result.failed_count === 0) {
+          this.excelFile = null;
+        }
+      } catch (error) {
+        console.error('Excel导入出错:', error);
+        this.importResult = {
+          success: false,
+          error: error.message || '导入过程中发生错误'
+        };
+      } finally {
+        this.isImporting = false;
+      }
+    }
 }
 };
 </script>
@@ -345,6 +505,77 @@ export default {
 .info-item:hover {
   background-color: rgba(0, 0, 0, 0.06);
   transform: translateX(5px);
+}
+
+.excel-import-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+}
+
+/* 右侧卡片容器样式 */
+.right-cards-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 卡片包装器样式 */
+.card-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-wrapper:first-child {
+  margin-bottom: 16px;
+  flex: 1 0 55%;
+}
+
+.card-wrapper:last-child {
+  margin-bottom: 4px;
+  flex: 1 0 40%;
+}
+
+/* 卡片样式 */
+.camera-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-info-card, 
+.import-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-wrapper .v-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0 !important;
+}
+
+.card-wrapper .v-card__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 强制列高度相同 */
+.v-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.v-row > .v-col {
+  display: flex;
+}
+
+.v-row > .v-col > .v-card {
+  width: 100%;
 }
 
 /* 动画效果 */

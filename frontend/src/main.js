@@ -43,6 +43,9 @@ axios.interceptors.response.use(
 
 Vue.config.productionTip = false
 
+// 将axios添加到Vue原型上，可以通过this.$http访问
+Vue.prototype.$http = axios
+
 // 添加全局过渡效果
 router.beforeEach((to, from, next) => {
   store.commit('SET_LOADING', true)

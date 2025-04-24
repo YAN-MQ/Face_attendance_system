@@ -359,13 +359,20 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
+import * as XLSX from 'xlsx';
 
 export default {
   name: 'Records',
   data: () => ({
+    attendanceRecords: [],
+    filteredRecords: [],
+    classInfo: null,
+    classOptions: [],
     search: '',
     selectedClass: null,
+    isLoading: false,
+    isFiltered: false,
     detailsDialog: false,
     selectedRecord: null,
     headers: [
@@ -376,43 +383,55 @@ export default {
       { text: '状态', value: 'status', sortable: true },
       { text: '识别置信度', value: 'recognition_confidence', sortable: true },
       { text: '活体检测方法', value: 'liveness_method', sortable: true },
-      { text: '操作', value: 'actions', sortable: false, align: 'center', width: '80px' }
-    ],
-    classOptions: [
-      { id: 'class1', name: '计算机科学与技术1班' },
-      { id: 'class2', name: '计算机科学与技术2班' },
-      { id: 'class3', name: '软件工程1班' },
-      { id: 'class4', name: '软件工程2班' },
-      { id: 'class5', name: '网络工程1班' }
-    ],
-    filteredRecords: [],
-    isFiltered: false
+      { text: '操作', value: 'actions', sortable: false }
+    ]
   }),
   computed: {
-    ...mapGetters([
-      'attendanceRecords',
-      'isLoading',
-      'error',
-      'classInfo'
-    ]),
+    ...mapState(['error']),
+    
     displayRecords() {
       return this.isFiltered ? this.filteredRecords : this.attendanceRecords;
     }
   },
   methods: {
-    ...mapActions(['fetchAttendanceRecords', 'fetchClassInfo']),
+    ...mapMutations(['SET_ERROR']),
     
-    formatDate(dateStr) {
-      if (!dateStr) return '';
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
+    async fetchAttendanceRecords() {
+      this.isLoading = true;
+      try {
+        const response = await fetch('/api/get_attendance');
+        if (!response.ok) throw new Error('获取考勤记录失败');
+        
+        const data = await response.json();
+        this.attendanceRecords = data;
+      } catch (error) {
+        console.error('获取考勤记录出错:', error);
+        this.SET_ERROR(`获取考勤记录失败: ${error.message}`);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
+    async fetchClassInfo() {
+      try {
+        const response = await fetch('/api/class_info');
+        if (!response.ok) throw new Error('获取班级信息失败');
+        
+        const data = await response.json();
+        this.classInfo = data;
+      } catch (error) {
+        console.error('获取班级信息出错:', error);
+        this.SET_ERROR(`获取班级信息失败: ${error.message}`);
+      }
+    },
+    
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      const month = ('0' + (date.getMonth() + 1)).slice(-2);
+      const day = ('0' + date.getDate()).slice(-2);
+      const dayOfWeek = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
       
-      return date.toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
-      });
+      return `${date.getFullYear()}年${month}月${day}日 星期${dayOfWeek}`;
     },
     
     getStatusColor(status) {
@@ -500,9 +519,68 @@ export default {
     },
     
     exportToExcel() {
-      // 这里应该实现导出为Excel的功能
-      // 实际开发中可能需要使用第三方库，如xlsx.js
-      alert('导出Excel功能需要在实际项目中实现');
+      try {
+        // 显示加载状态
+        this.isLoading = true;
+        
+        // 准备要导出的数据
+        const records = this.isFiltered ? this.filteredRecords : this.attendanceRecords;
+        
+        if (records.length === 0) {
+          this.SET_ERROR('没有可导出的数据');
+          this.isLoading = false;
+          return;
+        }
+        
+        // 创建要导出的数据数组，转换字段名为中文
+        const exportData = records.map(record => ({
+          '学号': record.student_id,
+          '姓名': record.student_name,
+          '日期': record.date,
+          '时间': record.time,
+          '状态': this.getStatusText(record.status),
+          '识别置信度': (record.recognition_confidence * 100).toFixed(1) + '%',
+          '活体检测方法': this.getLivenessMethodText(record.liveness_method),
+          '活体检测置信度': record.liveness_confidence ? (record.liveness_confidence * 100).toFixed(1) + '%' : '未知'
+        }));
+        
+        // 创建工作簿和工作表
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        
+        // 设置列宽
+        const columnWidths = [
+          { wch: 15 }, // 学号
+          { wch: 10 }, // 姓名
+          { wch: 12 }, // 日期
+          { wch: 10 }, // 时间
+          { wch: 8 },  // 状态
+          { wch: 12 }, // 识别置信度
+          { wch: 12 }, // 活体检测方法
+          { wch: 15 }  // 活体检测置信度
+        ];
+        worksheet['!cols'] = columnWidths;
+        
+        // 将工作表添加到工作簿
+        XLSX.utils.book_append_sheet(workbook, worksheet, '考勤记录');
+        
+        // 生成文件名，包含当前日期时间
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`;
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+        const fileName = `考勤记录_${dateStr}_${timeStr}.xlsx`;
+        
+        // 导出Excel文件
+        XLSX.writeFile(workbook, fileName);
+        
+        // 导出成功提示
+        this.$store.commit('SET_SUCCESS', '考勤记录已成功导出为Excel文件');
+      } catch (error) {
+        console.error('导出Excel失败:', error);
+        this.SET_ERROR(`导出Excel失败: ${error.message}`);
+      } finally {
+        this.isLoading = false;
+      }
     }
   },
   async mounted() {

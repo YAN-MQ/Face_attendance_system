@@ -78,12 +78,13 @@
               <v-menu offset-y rounded="lg">
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn
-                    color="info"
-                    text
+                    color="secondary"
+                    dark
                     v-bind="attrs"
                     v-on="on"
                     class="mx-2"
                     rounded
+                    elevation="3"
                   >
                     <v-icon left>mdi-cog</v-icon>
                     活体检测方法
