@@ -28,15 +28,21 @@
    ```bash
    cd Face_attendance_system
    ```
-3. 安装依赖：
+3. 进入项目后端：
    ```bash
+   cd backend
+   python app.py
+   ```   
+4. 安装依赖：
+   ```bash
+   cd frontend
    npm install
    ```
-4. 启动开发服务器：
+5. 启动开发服务器：
    ```bash
    npm run serve
    ```
-5. 在浏览器中打开 `http://localhost:8080` 查看项目。
+6. 在浏览器中打开 `http://localhost:8080` 查看项目。
 
 ## 使用方法
 
