@@ -242,8 +242,8 @@ export default {
 .v-application.theme--dark .bg-pattern {
   background-color: var(--v-background-base, #121212);
   background-image: 
-    radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.05) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.05) 2%, transparent 0%);
+    radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.07) 2%, transparent 0%),
+    radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.07) 2%, transparent 0%);
 }
 
 .menu-item {
@@ -326,7 +326,7 @@ export default {
 
 .solid-card-dark {
   background-color: #1E1E1E !important;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
 }
 
 .footer-solid {
@@ -337,5 +337,52 @@ export default {
 .footer-solid-dark {
   background-color: #1E1E1E !important;
   border-top: 1px solid #333333 !important;
+}
+
+/* 暗黑模式全局样式优化 */
+.theme--dark.v-application {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.theme--dark .v-card {
+  background-color: #1E1E1E !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.theme--dark .v-card.detection-card {
+  background-color: #2c2c2c !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.theme--dark .v-card.detection-card:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme--dark .v-list {
+  background-color: #1E1E1E !important;
+}
+
+.theme--dark .v-tabs {
+  background-color: #1E1E1E !important;
+}
+
+.theme--dark .custom-tag {
+  background-color: rgba(33, 150, 243, 0.3);
+  color: #90caf9;
+}
+
+.theme--dark .v-alert.result-alert {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme--dark .loading-container {
+  background-color: #1E1E1E;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme--dark .loading-text {
+  color: #90caf9;
 }
 </style> 

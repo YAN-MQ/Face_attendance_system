@@ -630,10 +630,60 @@ export default {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  background-color: rgba(33, 150, 243, 0.1);
+  background-color: rgba(33, 150, 243, 0.2);
   color: #1976d2;
   border-radius: 16px;
   font-weight: 500;
   font-size: 0.9rem;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.theme--dark .custom-tag {
+  background-color: rgba(33, 150, 243, 0.3);
+  color: #90caf9;
+  border: 1px solid rgba(144, 202, 249, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 深色模式适配 */
+.theme--dark .result-card,
+.theme--dark .guide-card {
+  background-color: #1E1E1E !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.theme--dark .no-result-box {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme--dark .primary-gradient {
+  background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%) !important;
+}
+
+.theme--dark .result-alert {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme--dark .loading-overlay,
+.theme--dark .camera-overlay,
+.theme--dark .success-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.theme--dark .v-alert {
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.theme--dark .loading-wave .dot {
+  background-color: #90caf9;
+}
+
+.theme--dark .menu-list {
+  background-color: #1E1E1E !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
 }
 </style> 
