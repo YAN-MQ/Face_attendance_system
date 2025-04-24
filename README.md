@@ -22,7 +22,7 @@
 
 1. 克隆项目到本地：
    ```bash
-   git clone [<repository-url>](https://github.com/YAN-MQ/Face_attendance_system)
+   git clone https://github.com/YAN-MQ/Face_attendance_system
    ```
 2. 进入项目目录：
    ```bash
